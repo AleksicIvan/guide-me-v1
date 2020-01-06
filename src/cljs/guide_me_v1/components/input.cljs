@@ -10,17 +10,13 @@
    [clojure.string :as string])
   (:import goog.History))
 
-(defn input-text [input-value]
-  [:input.input {:type "text"
+(defn input-text [input-value type]
+  [:input.input {:type type
            :value @input-value
            :on-change #(reset! input-value (-> % .-target .-value))}])
 
-(defn input-button [handleSigninClick data]
-  [:button.button.is-link {:disabled (let [{:keys [first_name last_name email pass]} data] 
-                                       (or (empty? first_name) 
-                                           (empty? last_name) 
-                                           (empty? email) 
-                                           (empty? pass)))
-                           :on-click #(handleSigninClick data)} "Login"])
+(defn input-button [handleSigninClick data label disabled]
+  [:button.button.is-link {:disabled disabled
+                           :on-click #(handleSigninClick data)} label])
 
 

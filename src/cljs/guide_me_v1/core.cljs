@@ -8,7 +8,8 @@
    [ajax.core :refer [GET POST]]
    [reitit.core :as reitit]
    [clojure.string :as string]
-   [guide-me-v1.components.input :refer [input-text input-button]])
+   [guide-me-v1.components.input :refer [input-text input-button]]
+   [guide-me-v1.validation :refer [is-valid-user? is-valid-login?]])
   (:import goog.History))
 
 (defn fetch-users! [users-state]
@@ -25,9 +26,10 @@
 
 (defonce session (r/atom {:page :home}))
 
-(defn nav-link [uri title page]
+(defn nav-link [uri title page expanded]
   [:a.navbar-item
    {:href   uri
+    :on-click #(swap! expanded not)
     :class (when (= page (:page @session)) "is-active")}
    title])
 
@@ -40,14 +42,15 @@
        {:data-target :nav-menu
         :on-click #(swap! expanded? not)
         :class (when @expanded? :is-active)}
-       [:span][:span][:span]]]
+       [:span] [:span] [:span]]]
      [:div#nav-menu.navbar-menu
       {:class (when @expanded? :is-active)}
       [:div.navbar-start
-       [nav-link "#/" "Home" :home]
-       [nav-link "#/users" "Users" :users]
-       [nav-link "#/login" "Login" :login]
-       [nav-link "#/about" "About" :about]]]]))
+       [nav-link "#/" "Home" :home expanded?]
+       [nav-link "#/login" "Login" :login expanded?]
+       [nav-link "#/signup" "Signup" :signup expanded?]
+       [nav-link "#/users" "Users" :users expanded?]
+       [nav-link "#/about" "About" :about expanded?]]]]))
 
 (defn about-page []
   [:section.section>div.container>div.content
@@ -65,6 +68,29 @@
   (set-hash! "/users"))
 
 (defn login-page []
+  (let [password (r/atom "")
+        email (r/atom "")]
+    (fn []
+      [:section.section>div.container>div.content
+       [:div.columns.is-mobile.is-centered
+        [:div.columns.is-half
+         [:fieldset
+          [:div.field
+           [:div.control.has-icons-left.has-icons-right
+            [:label.label "email"]
+            [input-text email "email"]]]
+          [:div.field
+           [:label.label "password"]
+           [input-text password "password"]]
+          [:div.field
+           [:p.control
+            [input-button
+             handleSigninClick
+             {:email @email :pass @password}
+             "Login"
+             (not (is-valid-login? {:email @email :pass @password}))]]]]]]])))
+
+(defn signup-page []
   (let [firstname (r/atom "")
         lastname (r/atom "")
         password (r/atom "")
@@ -77,20 +103,27 @@
             [:div.field
             [:label.label "first name"]
             [:div.control
-              [input-text firstname]]]
+              [input-text firstname "text"]]]
             [:div.field
             [:label.label "last name"]
-            [input-text lastname]]
+            [input-text lastname "text"]]
             [:div.field
             [:div.control.has-icons-left.has-icons-right
               [:label.label "email"]
-              [input-text email]]]
+              [input-text email "email"]]]
             [:div.field
             [:label.label "password"]
-            [input-text password]]
+            [input-text password "password"]]
             [:div.field
             [:p.control
-              [input-button handleSigninClick {:first_name @firstname :last_name @lastname :email @email :pass @password}]]]]]]])))
+              [input-button handleSigninClick
+               {:first_name @firstname :last_name @lastname :email @email :pass @password}
+               "Sign up"
+               (not (is-valid-user? {:first_name @firstname 
+                                    :last_name @lastname 
+                                    :email @email 
+                                    :pass @password}))
+               ]]]]]]])))
 
 (defn users-page []
   (let [users (r/atom {})]
@@ -111,6 +144,7 @@
   {:home #'home-page
    :about #'about-page
    :users #'users-page
+   :signup #'signup-page
    :login #'login-page})
 
 (defn page []
@@ -123,6 +157,7 @@
 (def router
   (reitit/router
     [["/" :home]
+     ["/signup" :signup]
      ["/users" :users]
      ["/login" :login]
      ["/about" :about]]))

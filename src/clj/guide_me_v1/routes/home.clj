@@ -19,6 +19,9 @@
 (defn login-page []
   {:status  200})
 
+(defn signup-page []
+  {:status  200})
+
 (defn save-user! [request]
   (let [{params :params} request]
     (db/create-user! params)
@@ -31,6 +34,8 @@
    ["/" {:get home-page}]
    ["/login" {:get (fn [_]
                     (login-page))}]
+   ["/signup" {:get (fn [_]
+                    (signup-page))}]
    ["/users" {:get (fn [_]
                       (-> (response/ok (db/get-users))
                           (users-page)))
